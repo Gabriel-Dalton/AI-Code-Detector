@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Code Detector</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">AI Code Detector</h1>
+        <textarea id="inputCode" class="w-full h-40 p-2 border border-gray-300 rounded-md mb-4" placeholder="Paste your code here..."></textarea>
+        <button onclick="analyzeCode()" class="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition">Analyze Code</button>
+        <div id="result" class="mt-4 text-xl text-gray-800 font-semibold"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

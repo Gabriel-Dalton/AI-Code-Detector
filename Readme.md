@@ -61,6 +61,9 @@ function getRandomNumber(min, max) {
 
 Paste the above code into the tool to see how it works.
 
+![image](https://github.com/user-attachments/assets/b5c83d89-2d38-4a42-be72-52ca8fe1b51b)
+
+
 ## Customization
 
 The CodeSniffer 3000's criteria can be customized by editing the JavaScript functions in `script.js`. For example, you can add new checks or adjust the scoring for existing ones to better suit your needs.

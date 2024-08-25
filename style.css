@@ -1,1 +1,36 @@
-/* Custom styles for AI Code Detector */
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #89cff0, #d1c4e9);
+}
+
+.container {
+    max-width: 450px;
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #333333;
+}
+
+textarea {
+    resize: none;
+    height: 200px;
+}
+
+button {
+    width: 100%;
+}
+
+#result {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background-color: #f0f4c3;
+    border-radius: 8px;
+}
+
+#details {
+    margin-top: 1rem;
+}

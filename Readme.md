@@ -63,7 +63,7 @@ Paste the above code into the tool to see how it works.
 
 ## Customization
 
-The CodeSniffer 3000's criteria can be customized by editing the JavaScript functions in `aiCodeDetector.js`. For example, you can add new checks or adjust the scoring for existing ones to better suit your needs.
+The CodeSniffer 3000's criteria can be customized by editing the JavaScript functions in `script.js`. For example, you can add new checks or adjust the scoring for existing ones to better suit your needs.
 
 ## Contributing
 
@@ -77,7 +77,7 @@ Contributions are welcome! If you have ideas for improving this project or find 
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## Acknowledgements
 

@@ -479,14 +479,26 @@ function runHeuristics(code) {
     });
 }
 
-function aggregate(findings) {
+const DEFAULT_THRESHOLDS = { mixed: 25, ai: 50 };
+
+function readThresholds() {
+    const m = parseInt(document.getElementById('thresholdMixed')?.value, 10);
+    const a = parseInt(document.getElementById('thresholdAi')?.value, 10);
+    const mixed = Number.isFinite(m) ? clamp(m, 0, 100) : DEFAULT_THRESHOLDS.mixed;
+    const ai = Number.isFinite(a) ? clamp(a, 0, 100) : DEFAULT_THRESHOLDS.ai;
+    return { mixed: Math.min(mixed, ai - 1), ai: Math.max(ai, mixed + 1) };
+}
+
+function aggregate(findings, thresholds = readThresholds()) {
     const sumMax = findings.reduce((a, f) => a + Math.abs(f.maxWeight), 0);
     const sumMatched = findings.reduce((a, f) => a + (f.matched ? f.weight : 0), 0);
     const percentage = clamp((sumMatched / sumMax) * 100, 0, 100);
-    const verdict = percentage >= 50 ? { label: "Likely AI-generated", tone: "ai" }
-                   : percentage >= 25 ? { label: "Mixed signals",       tone: "mixed" }
-                                      : { label: "Likely human-written", tone: "human" };
-    return { percentage, verdict, sumMatched, sumMax };
+    const verdict = percentage >= thresholds.ai
+                        ? { label: "Likely AI-generated", tone: "ai" }
+                    : percentage >= thresholds.mixed
+                        ? { label: "Mixed signals", tone: "mixed" }
+                        : { label: "Likely human-written", tone: "human" };
+    return { percentage, verdict, sumMatched, sumMax, thresholds };
 }
 
 // ---------- rendering ----------
@@ -496,18 +508,32 @@ function escapeHtml(s) {
 }
 
 function renderResults(findings, agg) {
+    const empty = document.getElementById('results-empty');
+    if (empty) empty.classList.add('hidden');
+
     const summary = document.getElementById('result-summary');
     const list = document.getElementById('result-findings');
     const toneClass = agg.verdict.tone === 'ai' ? 'verdict-ai'
                     : agg.verdict.tone === 'mixed' ? 'verdict-mixed'
                     : 'verdict-human';
 
+    const t = agg.thresholds;
     summary.innerHTML = `
-        <div class="verdict-row">
-            <span class="verdict-pill ${toneClass}">${escapeHtml(agg.verdict.label)}</span>
-            <span class="verdict-percent">${agg.percentage.toFixed(1)}%</span>
+        <div class="verdict-bar">
+            <div class="verdict-row">
+                <span class="verdict-pill ${toneClass}">${escapeHtml(agg.verdict.label)}</span>
+                <span class="verdict-percent">${agg.percentage.toFixed(1)}%</span>
+            </div>
+            <div class="score-meter" role="img" aria-label="Verdict score ${agg.percentage.toFixed(1)} percent">
+                <div class="score-fill" style="width:${agg.percentage.toFixed(2)}%"></div>
+                <div class="score-ticks">
+                    <span class="score-tick" style="left:${t.mixed}%" title="Mixed threshold (${t.mixed}%)"></span>
+                    <span class="score-tick" style="left:${t.ai}%" title="AI threshold (${t.ai}%)"></span>
+                </div>
+            </div>
+            <div class="score-axis"><span>0 · human</span><span>${t.mixed}</span><span>${t.ai}</span><span>100 · ai</span></div>
+            <p class="verdict-sub">Score ${agg.sumMatched.toFixed(2)} of ${agg.sumMax.toFixed(2)} possible. Thresholds ${t.mixed}/${t.ai}.</p>
         </div>
-        <p class="verdict-sub">Score ${agg.sumMatched.toFixed(2)} of ${agg.sumMax.toFixed(2)} possible.</p>
     `;
 
     const matched = findings.filter(f => f.matched);
@@ -522,6 +548,9 @@ function renderResults(findings, agg) {
         const pillText = f.matched
             ? (f.weight < 0 ? 'human signal' : 'AI signal')
             : 'not matched';
+        const humanClass = f.matched && f.weight < 0 ? ' human-signal' : '';
+        const lines = (f.evidence || []).map(e => e.line).filter(Boolean);
+        const linesAttr = lines.length ? ` data-lines="${lines.join(',')}"` : '';
 
         const evHtml = f.evidence.length
             ? `<ul class="evidence-list">${f.evidence.map(e => {
@@ -530,7 +559,7 @@ function renderResults(findings, agg) {
             }).join('')}</ul>`
             : '';
         return `
-            <details class="finding ${f.matched ? 'is-matched' : ''}" ${f.matched ? 'open' : ''}>
+            <details class="finding ${f.matched ? 'is-matched' : ''}${humanClass}"${linesAttr} ${f.matched ? 'open' : ''}>
                 <summary>
                     <span class="signal-pill ${pillTone}">${pillText}</span>
                     <span class="finding-label">${escapeHtml(f.label)}</span>
@@ -543,9 +572,9 @@ function renderResults(findings, agg) {
     };
 
     list.innerHTML = `
-        <h3 class="findings-heading">Matched signals (${matched.length})</h3>
-        ${matched.map(renderFinding).join('') || '<p class="findings-empty">None.</p>'}
-        <h3 class="findings-heading">Not matched (${notMatched.length})</h3>
+        <h3 class="findings-heading">Matched signals <span class="count">${matched.length} / ${findings.length}</span></h3>
+        ${matched.map(renderFinding).join('') || '<p class="findings-empty">None matched.</p>'}
+        <h3 class="findings-heading">Not matched <span class="count">${notMatched.length}</span></h3>
         ${notMatched.map(renderFinding).join('')}
     `;
 
@@ -555,6 +584,21 @@ function renderResults(findings, agg) {
             const line = parseInt(el.dataset.line, 10);
             if (line > 0) jumpTextareaToLine(line);
         });
+        el.addEventListener('mouseenter', () => {
+            const line = parseInt(el.dataset.line, 10);
+            if (line > 0) highlightEditorLines([line], true);
+        });
+        el.addEventListener('mouseleave', () => {
+            const line = parseInt(el.dataset.line, 10);
+            if (line > 0) highlightEditorLines([line], false);
+        });
+    });
+
+    // Hover the whole finding => light up all its evidence lines in the editor.
+    list.querySelectorAll('.finding[data-lines]').forEach(el => {
+        const lines = el.dataset.lines.split(',').map(n => parseInt(n, 10)).filter(Boolean);
+        el.addEventListener('mouseenter', () => highlightEditorLines(lines, true));
+        el.addEventListener('mouseleave', () => highlightEditorLines(lines, false));
     });
 }
 
@@ -574,25 +618,30 @@ function jumpTextareaToLine(line) {
 
 function analyzeCode() {
     const code = document.getElementById('inputCode').value;
-    const result = document.getElementById('result');
-    result.classList.remove('hidden');
+    const empty = document.getElementById('results-empty');
 
     if (code.trim() === '') {
-        document.getElementById('result-summary').innerHTML = '<p class="muted">Paste some code, then press Analyze.</p>';
+        if (empty) empty.classList.remove('hidden');
+        document.getElementById('result-summary').innerHTML = '';
         document.getElementById('result-findings').innerHTML = '';
         return;
     }
 
+    if (empty) empty.classList.add('hidden');
     const findings = runHeuristics(code);
     const agg = aggregate(findings);
     renderResults(findings, agg);
+    persistState();
 }
 
 function resetForm() {
     document.getElementById('inputCode').value = '';
-    document.getElementById('result').classList.add('hidden');
     document.getElementById('result-summary').innerHTML = '';
     document.getElementById('result-findings').innerHTML = '';
+    const empty = document.getElementById('results-empty');
+    if (empty) empty.classList.remove('hidden');
+    updateGutter();
+    persistState();
 }
 
 // ---------- gallery ----------
@@ -656,7 +705,11 @@ function highlightCardLines(cardId, from, to, on) {
 function loadExampleIntoAnalyzer(id) {
     const ex = (window.AI_CODE_EXAMPLES || []).find(e => e.id === id);
     if (!ex) return;
-    document.getElementById('inputCode').value = ex.code;
+    const ta = document.getElementById('inputCode');
+    ta.value = ex.code;
+    ta.scrollTop = 0;
+    ta.setSelectionRange(0, 0);
+    updateGutter();
     switchTab('analyze');
     analyzeCode();
     document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -686,17 +739,23 @@ function renderDocs() {
     list.innerHTML = HEURISTICS.map(h => {
         const stub = h.run('').reason; // pull the canonical reason from a no-op call
         const sign = h.weight < 0 ? '' : '+';
+        const toneClass = h.weight < 0 ? 'pill-human' : 'pill-ai';
+        const toneText = h.weight < 0 ? 'human' : 'ai';
         return `
             <article class="doc-row">
                 <header>
                     <h3>${escapeHtml(h.label)}</h3>
                     <span class="finding-weight">${sign}${h.weight.toFixed(1)}</span>
                 </header>
-                <p class="muted">${escapeHtml(stub)}</p>
-                <code class="doc-id">id: ${escapeHtml(h.id)}</code>
+                <p class="muted"><span class="doc-tone ${toneClass}">${toneText}</span>${escapeHtml(stub)}</p>
+                <code class="doc-id">${escapeHtml(h.id)}</code>
             </article>
         `;
     }).join('');
+    const docsCount = document.getElementById('tab-count-docs');
+    if (docsCount) docsCount.textContent = HEURISTICS.length;
+    const metaSignals = document.getElementById('meta-signals');
+    if (metaSignals) metaSignals.textContent = HEURISTICS.length;
 }
 
 // ---------- tabs ----------
@@ -732,16 +791,139 @@ function setupExampleDropdown() {
     });
 }
 
+// ---------- editor (line-numbered gutter + hover-highlight overlay) ----------
+
+function updateGutter() {
+    const ta = document.getElementById('inputCode');
+    const gutter = document.getElementById('editor-gutter');
+    if (!ta || !gutter) return;
+    const total = Math.max(1, ta.value.split('\n').length);
+    let out = '';
+    for (let i = 1; i <= total; i++) out += (i === 1 ? '' : '\n') + i;
+    gutter.textContent = out;
+    syncEditorScroll();
+    updateOverlayLines();
+}
+
+function syncEditorScroll() {
+    const ta = document.getElementById('inputCode');
+    const gutter = document.getElementById('editor-gutter');
+    const overlay = document.getElementById('editor-overlay');
+    if (!ta) return;
+    if (gutter) gutter.scrollTop = ta.scrollTop;
+    if (overlay) overlay.scrollTop = ta.scrollTop;
+}
+
+function updateOverlayLines() {
+    const ta = document.getElementById('inputCode');
+    const overlay = document.getElementById('editor-overlay');
+    if (!ta || !overlay) return;
+    const lines = ta.value.split('\n');
+    overlay.innerHTML = lines.map((_, i) =>
+        `<span class="ovl-line" data-line="${i + 1}">&nbsp;</span>`
+    ).join('');
+}
+
+function highlightEditorLines(lines, on) {
+    const overlay = document.getElementById('editor-overlay');
+    if (!overlay) return;
+    lines.forEach(ln => {
+        const el = overlay.querySelector(`.ovl-line[data-line="${ln}"]`);
+        if (el) el.classList.toggle('is-hl', !!on);
+    });
+}
+
+function setupEditor() {
+    const ta = document.getElementById('inputCode');
+    if (!ta) return;
+    ta.addEventListener('input', () => {
+        updateGutter();
+        persistState();
+    });
+    ta.addEventListener('scroll', syncEditorScroll);
+    ta.addEventListener('keydown', (e) => {
+        // Cmd/Ctrl + Enter => analyze
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            analyzeCode();
+        }
+        // Tab => insert two spaces (don't lose focus)
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = ta.selectionStart;
+            const end = ta.selectionEnd;
+            ta.value = ta.value.slice(0, start) + '    ' + ta.value.slice(end);
+            ta.selectionStart = ta.selectionEnd = start + 4;
+            updateGutter();
+        }
+    });
+    updateGutter();
+}
+
+// ---------- persistence ----------
+
+const LS_KEY = 'ai-code-detector:v1';
+
+function persistState() {
+    try {
+        const state = {
+            code: document.getElementById('inputCode')?.value || '',
+            mixed: document.getElementById('thresholdMixed')?.value || '25',
+            ai: document.getElementById('thresholdAi')?.value || '50'
+        };
+        localStorage.setItem(LS_KEY, JSON.stringify(state));
+    } catch (_) { /* ignore */ }
+}
+
+function restoreState() {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return;
+        const s = JSON.parse(raw);
+        const ta = document.getElementById('inputCode');
+        if (ta && typeof s.code === 'string') ta.value = s.code;
+        const m = document.getElementById('thresholdMixed');
+        const a = document.getElementById('thresholdAi');
+        if (m && s.mixed) m.value = s.mixed;
+        if (a && s.ai) a.value = s.ai;
+    } catch (_) { /* ignore */ }
+}
+
+function setupThresholds() {
+    const m = document.getElementById('thresholdMixed');
+    const a = document.getElementById('thresholdAi');
+    if (!m || !a) return;
+    const onChange = () => {
+        persistState();
+        // Re-render if a result is already visible.
+        if (document.querySelector('#result-summary .verdict-pill')) analyzeCode();
+    };
+    m.addEventListener('change', onChange);
+    a.addEventListener('change', onChange);
+}
+
 // ---------- init ----------
 
 function init() {
+    restoreState();
     document.getElementById('analyzeBtn').addEventListener('click', analyzeCode);
     document.getElementById('resetBtn').addEventListener('click', resetForm);
     setupTabs();
     setupExampleDropdown();
     setupFilters();
+    setupEditor();
+    setupThresholds();
     renderGallery();
     renderDocs();
+
+    const examplesCount = document.getElementById('meta-examples');
+    if (examplesCount && window.AI_CODE_EXAMPLES) {
+        examplesCount.textContent = window.AI_CODE_EXAMPLES.length;
+    }
+    const galleryCount = document.getElementById('tab-count-gallery');
+    if (galleryCount && window.AI_CODE_EXAMPLES) {
+        galleryCount.textContent = window.AI_CODE_EXAMPLES.length;
+    }
 }
 
 if (document.readyState === 'loading') {

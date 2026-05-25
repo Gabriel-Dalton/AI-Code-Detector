@@ -5,67 +5,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Code Detector</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
 <body>
 
     <main class="page">
         <header class="page-head">
-            <h1 class="text-3xl font-bold">AI Code Detector 🕵️‍♂️</h1>
-            <p class="page-sub">Paste code, get an evidence-backed verdict. Browse the gallery to see what AI tells look like in the wild.</p>
+            <div>
+                <span class="eyebrow">v0.2 · client-side, no network calls</span>
+                <h1>AI Code Detector</h1>
+                <p class="page-sub">Paste code, get an evidence-backed verdict. Every match shows the lines and snippets that triggered it, weighted by signal. Browse the gallery for annotated samples of what AI tells look like in the wild.</p>
+            </div>
+            <div class="meta">
+                <strong id="meta-signals">13</strong> heuristics<br>
+                <strong id="meta-examples">8</strong> annotated samples<br>
+                <strong>4</strong> languages
+            </div>
         </header>
 
         <nav class="tabs" role="tablist">
             <button class="tab-btn is-active" role="tab" aria-selected="true"  data-tab="analyze">Analyze</button>
-            <button class="tab-btn"           role="tab" aria-selected="false" data-tab="gallery">Examples Gallery</button>
-            <button class="tab-btn"           role="tab" aria-selected="false" data-tab="docs">How it Works</button>
+            <button class="tab-btn"           role="tab" aria-selected="false" data-tab="gallery">Gallery <span class="tab-count" id="tab-count-gallery">8</span></button>
+            <button class="tab-btn"           role="tab" aria-selected="false" data-tab="docs">Heuristics <span class="tab-count" id="tab-count-docs">13</span></button>
         </nav>
 
         <section class="tab-panel" data-panel="analyze">
-            <div class="panel-card">
-                <textarea id="inputCode" class="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Paste your code here..."></textarea>
-
-                <div class="panel-actions">
-                    <button id="analyzeBtn" class="btn btn-primary">Analyze Code</button>
-                    <button id="resetBtn"   class="btn btn-danger">Reset</button>
-                    <select id="exampleLoader" class="example-select" aria-label="Try an example"></select>
+            <div class="workbench">
+                <div class="panel" id="editor-panel">
+                    <div class="panel-head">
+                        <h2 class="panel-title">Input · paste code</h2>
+                        <div class="panel-actions-inline">
+                            <select id="exampleLoader" class="example-select" aria-label="Try an example"></select>
+                        </div>
+                    </div>
+                    <div class="editor" id="editor">
+                        <div class="editor-gutter" id="editor-gutter" aria-hidden="true">1</div>
+                        <div class="editor-stage">
+                            <div class="editor-overlay" id="editor-overlay" aria-hidden="true"></div>
+                            <textarea id="inputCode" class="editor-input" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="Paste your code here, then press Analyze (or ⌘/Ctrl + Enter)…"></textarea>
+                        </div>
+                    </div>
+                    <div class="editor-toolbar">
+                        <div class="left">
+                            <button id="analyzeBtn" class="btn btn-primary">Analyze</button>
+                            <button id="resetBtn" class="btn btn-danger">Reset</button>
+                            <div class="thresholds" aria-label="Verdict thresholds">
+                                <label>Mixed ≥ <input type="number" id="thresholdMixed" min="0" max="100" step="1" value="25"></label>
+                                <label>AI ≥ <input type="number" id="thresholdAi" min="0" max="100" step="1" value="50"></label>
+                            </div>
+                        </div>
+                        <div class="right">
+                            <span class="shortcut-hint"><kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> · analyze</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="result" class="hidden result-block">
-                    <div id="result-summary"></div>
-                    <div id="result-findings"></div>
+                <div class="panel" id="results-panel">
+                    <div class="panel-head">
+                        <h2 class="panel-title">Result · evidence-backed verdict</h2>
+                    </div>
+                    <div id="result" class="result-block">
+                        <div class="results-empty" id="results-empty">
+                            <span class="icon">— awaiting input —</span>
+                            Paste code on the left and press <strong>Analyze</strong>. Every matched heuristic will show its line numbers and snippets here.
+                        </div>
+                        <div id="result-summary"></div>
+                        <div id="result-findings" class="findings"></div>
+                    </div>
                 </div>
             </div>
         </section>
 
         <section class="tab-panel hidden" data-panel="gallery">
-            <div class="panel-card">
-                <div class="filters">
-                    <span class="filters-label">Language:</span>
-                    <button class="filter-chip is-active" data-filter="all">All</button>
-                    <button class="filter-chip" data-filter="javascript">JavaScript</button>
-                    <button class="filter-chip" data-filter="typescript">TypeScript</button>
-                    <button class="filter-chip" data-filter="python">Python</button>
-                    <button class="filter-chip" data-filter="java">Java</button>
-                </div>
-                <p class="muted gallery-note">
-                    Most samples are <strong>curated</strong> (distilled from common LLM idioms so each one cleanly
-                    demonstrates one or two signals). A few are <strong>verbatim</strong> transcripts captured from
-                    popular LLMs. Each badge tells you which.
-                </p>
-                <div id="gallery-grid" class="gallery-grid"></div>
+            <div class="filters">
+                <span class="filters-label">Language</span>
+                <button class="filter-chip is-active" data-filter="all">All</button>
+                <button class="filter-chip" data-filter="javascript">JavaScript</button>
+                <button class="filter-chip" data-filter="typescript">TypeScript</button>
+                <button class="filter-chip" data-filter="python">Python</button>
+                <button class="filter-chip" data-filter="java">Java</button>
             </div>
+            <p class="gallery-note">
+                Most samples are <strong>curated</strong> — distilled from common LLM idioms so each one cleanly
+                demonstrates one or two signals. A few are <strong>verbatim</strong> transcripts captured from
+                popular LLMs to keep a real-world feel. Each badge tells you which. Click <em>Load into analyzer</em>
+                on any card to see how the detector scores it.
+            </p>
+            <div id="gallery-grid" class="gallery-grid"></div>
         </section>
 
         <section class="tab-panel hidden" data-panel="docs">
-            <div class="panel-card">
+            <div class="docs-intro">
                 <h2 class="section-h">Heuristics &amp; weights</h2>
-                <p class="muted">Each signal contributes its weight when matched. The score is normalized over the sum of absolute weights and clamped to 0–100.</p>
-                <div id="docs-list" class="docs-list"></div>
+                <p class="muted">Each signal contributes its weight when matched. The verdict score is normalized over the sum of absolute weights and clamped to 0–100. Positive weights are AI tells; the negative-weighted <em>Human-style complexity</em> heuristic acts as a counterweight when a snippet shows real human variety.</p>
             </div>
+            <div id="docs-list" class="docs-list"></div>
         </section>
+
+        <footer class="page-foot">
+            <span>AI Code Detector · runs entirely in your browser.</span>
+            <span>MIT · <a href="https://github.com/Gabriel-Dalton/AI-Code-Detector">source</a></span>
+        </footer>
     </main>
 
     <script src="examples.js"></script>

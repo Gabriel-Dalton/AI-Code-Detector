@@ -130,8 +130,12 @@ script.js               heuristics, scoring, rendering, the combobox
 examples.js             the annotated sample gallery
 assets/favicon.svg
 assets/fonts/           vendored woff2 subsets + OFL licence
+scripts/                dev tooling (the WCAG contrast audit)
 docs/images/            README screenshots
 ```
+
+`package.json` exists only to pin the dev tooling. The app has no runtime
+dependencies and no build step — `index.html` is the whole entry point.
 
 ## Design notes
 
@@ -196,6 +200,37 @@ a skip link to the editor, `aria-live` announcement of each verdict, and
 `prefers-reduced-motion` honoured. `Tab` inside the editor inserts an
 indent but `Shift`+`Tab` still moves focus, so the textarea never becomes a
 keyboard trap.
+
+**Contrast is verified, not assumed.** `scripts/contrast-audit.mjs` renders
+the real page in both themes across six interaction states and checks every
+foreground/background pair against WCAG 2.1 AA:
+
+```bash
+npm install            # dev-only; the app still has no build step
+npm run serve &
+npm run audit:contrast
+```
+
+It reads computed styles rather than the token table, because `light-dark()`,
+alpha compositing and tinted hover states all mean a declared value tells
+you very little about what actually lands on screen. It covers 1.4.3 (text,
+4.5:1 or 3:1 when large), 1.4.11 (control boundaries and the focus
+indicator, 3:1) and 2.4.7 (a visible keyboard focus indicator), and exits
+non-zero on any failure so it can gate a commit.
+
+Two token decisions fell out of running it:
+
+- The text ramp stops at three tiers. A fourth, fainter grey could not clear
+  4.5:1 without becoming indistinguishable from the third, so quiet text is
+  differentiated by size, weight and italics instead of by more greys.
+- Control boundaries get their own token (`--control-border`, 3.2:1) rather
+  than sharing the decorative `--rule-2`. For a text input the border *is*
+  the information that says "you can act here", so it has to clear 1.4.11 —
+  while a decorative separator carries no information and can stay delicate.
+
+The audit's own checks are mutation-tested: sabotaging the focus colour, a
+text token, or the control border each produce the expected failures, so a
+green run means something.
 
 ## Roadmap
 
@@ -276,7 +311,9 @@ If you're changing the UI, two rules keep the design coherent:
   for why.
 - **Colours go through the tokens** at the top of `style.css`, declared
   once with `light-dark()`. Adding a raw hex value in a component rule
-  means it will be wrong in one of the two themes.
+  means it will be wrong in one of the two themes — and run
+  `npm run audit:contrast` before you push, since a new colour pairing is
+  exactly what it exists to catch.
 
 ## License
 

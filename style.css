@@ -122,22 +122,41 @@
     --surface-3:   light-dark(#e6dfce, #272219);
 
     /* --- text ----------------------------------------------------------- */
+    /* Three tiers, and three is the ceiling: every one of these is used for
+       real text, so each has to clear WCAG AA (4.5:1) against every surface
+       it can land on — including the tinted hover states. A fourth, fainter
+       grey was tried and removed; at 4.5:1 it was visually indistinguishable
+       from --ink-3, so it bought a token and no hierarchy. Quiet text is
+       differentiated by size, weight and italics instead.
+       Verified by scripts/contrast-audit.mjs. */
     --ink:         #17130d;
     --ink:         light-dark(#17130d, #f2ece0);
     --ink-2:       #3d372c;
     --ink-2:       light-dark(#3d372c, #d1c9b9);
-    --ink-3:       #6d6557;
+    --ink-3:       #6d6557;   /* AA floor: 4.88 light / 5.56 dark */
     --ink-3:       light-dark(#6d6557, #9a9182);
-    --ink-4:       #8d8474;
-    --ink-4:       light-dark(#8d8474, #7a7264);
 
     /* --- rules ---------------------------------------------------------- */
+    /* Decorative separators. These are exempt from WCAG 1.4.11 — they carry
+       no information and identify no control — so they stay as delicate as
+       the ledger look wants. */
     --rule:        #ddd6c6;
     --rule:        light-dark(#ddd6c6, #2c2822);
     --rule-2:      #c6bda8;
     --rule-2:      light-dark(#c6bda8, #3d382f);
     --rule-hard:   #17130d;
     --rule-hard:   light-dark(#17130d, #4b4539);
+
+    /* The boundary of an interactive control is a different job: for a text
+       input or a combobox it IS the thing that says "you can act here", so
+       WCAG 1.4.11 wants 3:1 against the surface behind it. Kept as its own
+       token rather than darkening --rule-2, which would coarsen every
+       hairline on the page. Applied to all controls, not just the ones that
+       strictly need it, so control borders read as one consistent weight.
+       Solved for 3.2:1 rather than exactly 3.0 so rounding to an integer hex
+       triplet cannot land it under the bar. Floor: 3.21 light / 3.21 dark. */
+    --control-border: #807a6d;
+    --control-border: light-dark(#807a6d, #747069);
 
     /* --- signal colours ------------------------------------------------- */
     --ai:          #9b3a1b;
@@ -166,8 +185,9 @@
     --code-bg:     light-dark(#191510, #0b0a08);
     --code-fg:     #ece5d6;
     --code-fg:     light-dark(#ece5d6, #e6dfd0);
+    /* The code well is dark in both themes, so this needs no light-dark()
+       split — one value clears 4.5:1 against both wells (4.84 worst case). */
     --code-dim:    #8b8375;
-    --code-dim:    light-dark(#8b8375, #7c7568);
     --code-rule:   rgba(236, 229, 214, 0.09);
     --code-hl:     rgba(193, 87, 49, 0.30);
     --code-hl:     light-dark(rgba(193, 87, 49, 0.30), rgba(229, 138, 95, 0.22));
@@ -609,7 +629,15 @@ a:hover { color: var(--ink); }
     font-variant-numeric: tabular-nums;
 }
 
-.toolbar-sep { color: var(--rule-2); }
+/* A drawn rule, not a middot glyph. A separator character in a rule-weight
+   colour is text as far as WCAG 1.4.3 is concerned, and it failed at 1.6:1;
+   as an actual 1px border it is decoration and exempt. */
+.toolbar-sep {
+    align-self: stretch;
+    width: 1px;
+    min-height: 1em;
+    background: var(--rule-2);
+}
 
 kbd {
     display: inline-block;
@@ -639,7 +667,7 @@ kbd {
     padding: 0.45rem 0.85rem;
     color: var(--ink);
     background: var(--surface);
-    border: 1px solid var(--rule-2);
+    border: 1px solid var(--control-border);
     border-radius: var(--radius);
     cursor: pointer;
     transition: background var(--tempo), border-color var(--tempo), color var(--tempo);
@@ -683,7 +711,7 @@ kbd {
     color: var(--ink-2);
     text-decoration: none;
     background: var(--surface);
-    border: 1px solid var(--rule);
+    border: 1px solid var(--control-border);
     border-radius: var(--radius);
     cursor: pointer;
     transition: background var(--tempo), border-color var(--tempo), color var(--tempo);
@@ -742,7 +770,7 @@ kbd {
     color: var(--ink-2);
     text-align: left;
     background: var(--surface);
-    border: 1px solid var(--rule-2);
+    border: 1px solid var(--control-border);
     border-radius: var(--radius);
     cursor: pointer;
     transition: border-color var(--tempo), color var(--tempo);
@@ -788,7 +816,7 @@ kbd {
     padding: var(--sp-1);
     list-style: none;
     background: var(--surface);
-    border: 1px solid var(--rule-2);
+    border: 1px solid var(--control-border);
     border-radius: var(--radius);
     box-shadow: 0 1px 0 var(--rule) inset, 0 10px 24px -12px rgba(23, 19, 13, 0.35);
     scrollbar-width: thin;
@@ -826,7 +854,7 @@ kbd {
 .combo-option-meta {
     flex: none;
     font-size: var(--fs-micro);
-    color: var(--ink-4);
+    color: var(--ink-3);
 }
 
 .combo-option.is-active .combo-option-meta { color: var(--ink-3); }
@@ -856,7 +884,7 @@ kbd {
     font-variant-numeric: tabular-nums;
     color: var(--ink);
     background: var(--surface);
-    border: 1px solid var(--rule-2);
+    border: 1px solid var(--control-border);
     border-radius: var(--radius);
 }
 
@@ -869,7 +897,7 @@ kbd {
     font-weight: 500;
     color: var(--ink-2);
     background: transparent;
-    border: 1px solid var(--rule-2);
+    border: 1px solid var(--control-border);
     border-radius: var(--radius);
     cursor: pointer;
     transition: background var(--tempo), color var(--tempo), border-color var(--tempo);
@@ -908,7 +936,7 @@ kbd {
     margin-bottom: var(--sp-3);
     font-size: var(--fs-tiny);
     font-style: italic;
-    color: var(--ink-4);
+    color: var(--ink-3);
 }
 
 .empty-rule::before,
@@ -1012,7 +1040,7 @@ kbd {
     height: 1.1rem;
     margin-top: var(--sp-1);
     font-size: var(--fs-micro);
-    color: var(--ink-4);
+    color: var(--ink-3);
     font-variant-numeric: tabular-nums;
 }
 
@@ -1127,7 +1155,7 @@ kbd {
 .evidence-row .line-num {
     flex: none;
     min-width: 2.6em;
-    color: var(--ink-4);
+    color: var(--ink-3);
     font-variant-numeric: tabular-nums;
     user-select: none;
 }

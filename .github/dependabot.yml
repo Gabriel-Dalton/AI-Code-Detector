@@ -1,0 +1,22 @@
+version: 2
+
+# Only dev tooling is versioned here — the app itself has no runtime
+# dependencies. Monthly is right for two dev packages; weekly would be noise.
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'deps'
+    groups:
+      dev-tooling:
+        patterns: ['*']
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: 'ci'

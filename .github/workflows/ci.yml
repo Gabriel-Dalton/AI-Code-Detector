@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+# A new push to the same branch makes the in-flight run obsolete.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 20 is the engines floor, 24 is current. If the suite ever needs a
+        # dependency to run, that is a regression worth noticing here.
+        node: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # Deliberately no `npm ci`. The engine and its tests have zero
+      # dependencies, and running them on a bare checkout is the check that
+      # keeps it that way.
+      - name: Run the test suite
+        run: node --test
+
+  a11y:
+    name: WCAG AA contrast
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Polled with curl rather than a wait-for-it package: adding a dependency
+      # to wait for a server is how a zero-dependency project stops being one.
+      - name: Serve the page
+        run: |
+          npm run serve &
+          for _ in $(seq 1 30); do
+            curl -sfo /dev/null http://127.0.0.1:8899/index.html && exit 0
+            sleep 1
+          done
+          echo "static server did not come up on :8899" >&2
+          exit 1
+
+      # Renders the real page in both themes across six interaction states and
+      # exits non-zero on any AA failure.
+      - name: Audit contrast
+        run: npm run audit:contrast
+
+  hygiene:
+    name: repository hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Every source file has to parse as the kind of script index.html loads
+      # it as. Cheap, and it catches a bad merge before the tests do.
+      - name: Check that every script parses
+        run: |
+          for f in detector.js script.js examples.js scripts/*.mjs test/*.mjs; do
+            node --check "$f" || exit 1
+          done
+
+      # Version consistency across package.json, the masthead and the changelog,
+      # plus every relative link in the docs actually resolving.
+      - name: Check the docs
+        run: node --test test/docs.test.mjs

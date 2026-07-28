@@ -1,8 +1,15 @@
 node_modules/
-package-lock.json
+
+# package-lock.json is deliberately NOT ignored. The app has no runtime
+# dependencies, but the dev tooling does, and committing the lockfile is what
+# lets CI use `npm ci` and Dependabot see the resolved tree.
 
 .DS_Store
 Thumbs.db
 
 .vscode/
 .idea/
+
+# Playwright leaves these behind when a run fails.
+test-results/
+playwright-report/

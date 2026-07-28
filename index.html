@@ -40,7 +40,7 @@
     <div class="page">
         <header class="masthead">
             <div class="masthead-main">
-                <p class="eyebrow">v0.2 · client-side · no network calls</p>
+                <p class="eyebrow">v1.0 · client-side · no network calls</p>
                 <h1>AI Code Detector</h1>
                 <p class="lede">Paste code, get an evidence-backed verdict. Every match cites the lines and
                     snippets that triggered it, weighted by signal strength — so you can audit the reasoning
@@ -219,7 +219,10 @@
 
     <p class="sr-only" id="result-status" role="status" aria-live="polite"></p>
 
+    <!-- Load order matters and is the whole build system: gallery data, then
+         the detection engine, then the UI that renders both. -->
     <script src="examples.js"></script>
+    <script src="detector.js"></script>
     <script src="script.js"></script>
 </body>
 

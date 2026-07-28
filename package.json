@@ -1,14 +1,36 @@
 {
   "name": "ai-code-detector",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Dev tooling only. The app itself is static HTML/CSS/JS with no build step and no runtime dependencies — open index.html and it works.",
+  "license": "MIT",
+  "author": "Gabriel Dalton",
+  "homepage": "https://github.com/Gabriel-Dalton/AI-Code-Detector#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gabriel-Dalton/AI-Code-Detector.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Gabriel-Dalton/AI-Code-Detector/issues"
+  },
+  "keywords": [
+    "ai-detection",
+    "llm",
+    "code-analysis",
+    "heuristics",
+    "static-site"
+  ],
   "scripts": {
+    "test": "node --test",
     "serve": "http-server -p 8899 -s",
-    "audit:contrast": "node scripts/contrast-audit.mjs"
+    "audit:contrast": "node scripts/contrast-audit.mjs",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "devDependencies": {
     "http-server": "^14.1.1",
     "playwright": "^1.56.1"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

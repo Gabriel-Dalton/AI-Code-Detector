@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Gabriel-Dalton/AI-Code-Detector/security/advisories/new
+    about: Report privately via a security advisory, not a public issue. See SECURITY.md.
+  - name: Contributing guide
+    url: https://github.com/Gabriel-Dalton/AI-Code-Detector/blob/main/CONTRIBUTING.md
+    about: How the code is laid out, and what adding a heuristic or a gallery sample involves.

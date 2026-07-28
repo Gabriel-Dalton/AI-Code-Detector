@@ -194,7 +194,7 @@ npm test                 # the whole suite — no dependencies, no browser
 works on a fresh clone before `npm install` finishes. CI runs it on Node 20, 22
 and 24; if it ever needs a dependency, that's a regression.
 
-What it covers, roughly 190 assertions:
+What it covers, across 217 assertions:
 
 - **Every heuristic, twice** — once against a snippet it must flag, once against
   a snippet it must leave alone. The second half is the one that matters: a

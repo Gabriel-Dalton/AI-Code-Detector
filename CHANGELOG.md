@@ -16,7 +16,7 @@ from a command instead of being taken by hand.
 
 ### Added
 
-- **A test suite, on Node's built-in runner with no dependencies.** 190+
+- **A test suite, on Node's built-in runner with no dependencies.** 217
   assertions covering all thirteen heuristics (each with a fixture it must fire
   on *and* one it must stay quiet on), the scoring arithmetic, the verdict
   bands, threshold normalisation, the shared string helpers, and degenerate

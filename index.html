@@ -4,113 +4,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Code Detector</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>AI Code Detector — evidence-backed heuristics for spotting LLM-written code</title>
+    <meta name="description"
+          content="Paste code and get a weighted, evidence-backed verdict on whether an LLM wrote it. Every signal cites the exact lines that triggered it. Runs entirely in your browser — no network calls, no telemetry.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f6f3ec" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#100e0b" media="(prefers-color-scheme: dark)">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="AI Code Detector">
+    <meta property="og:description"
+          content="Paste code, get an evidence-backed verdict. Thirteen weighted heuristics, every match citing the lines that triggered it. No network calls.">
+    <meta name="twitter:card" content="summary">
+
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/source-serif-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="style.css">
+
+    <script>
+        // Apply the stored theme before first paint so there is no flash of the
+        // wrong palette. Kept inline and tiny on purpose.
+        try {
+            var t = localStorage.getItem('ai-code-detector:theme');
+            if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        } catch (e) { /* private mode; fall back to the system preference */ }
+    </script>
 </head>
 
 <body>
 
-    <main class="page">
-        <header class="page-head">
-            <div>
-                <span class="eyebrow">v0.2 · client-side, no network calls</span>
+    <a class="skip-link" href="#inputCode">Skip to the editor</a>
+
+    <div class="page">
+        <header class="masthead">
+            <div class="masthead-main">
+                <p class="eyebrow">v0.2 · client-side · no network calls</p>
                 <h1>AI Code Detector</h1>
-                <p class="page-sub">Paste code, get an evidence-backed verdict. Every match shows the lines and snippets that triggered it, weighted by signal. Browse the gallery for annotated samples of what AI tells look like in the wild.</p>
+                <p class="lede">Paste code, get an evidence-backed verdict. Every match cites the lines and
+                    snippets that triggered it, weighted by signal strength — so you can audit the reasoning
+                    instead of trusting a number.</p>
             </div>
-            <div class="meta">
-                <strong id="meta-signals">13</strong> heuristics<br>
-                <strong id="meta-examples">8</strong> annotated samples<br>
-                <strong>4</strong> languages
+
+            <div class="masthead-side">
+                <div class="masthead-tools">
+                    <button type="button" id="themeToggle" class="icon-btn"
+                            title="Switch between the light and dark palette">
+                        <svg class="icon-sun" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                            <circle cx="10" cy="10" r="3.6"/>
+                            <path d="M10 1.5v2.2M10 16.3v2.2M1.5 10h2.2M16.3 10h2.2M4 4l1.6 1.6M14.4 14.4L16 16M16 4l-1.6 1.6M5.6 14.4L4 16"/>
+                        </svg>
+                        <svg class="icon-moon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                            <path d="M16.5 12.4A7 7 0 0 1 7.6 3.5a7 7 0 1 0 8.9 8.9z"/>
+                        </svg>
+                        <span class="icon-btn-label" id="themeToggleLabel">Dark theme</span>
+                    </button>
+                    <a class="icon-btn" href="https://github.com/Gabriel-Dalton/AI-Code-Detector"
+                       rel="noopener" aria-label="View the source on GitHub"
+                       title="View the source on GitHub">
+                        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" class="icon-filled">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.07-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A7.99 7.99 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                        </svg>
+                        <span class="icon-btn-label">Source</span>
+                    </a>
+                </div>
+
+                <dl class="stats">
+                    <div class="stat">
+                        <dt>Heuristics</dt>
+                        <dd id="meta-signals">13</dd>
+                    </div>
+                    <div class="stat">
+                        <dt>Samples</dt>
+                        <dd id="meta-examples">8</dd>
+                    </div>
+                    <div class="stat">
+                        <dt>Languages</dt>
+                        <dd id="meta-languages">4</dd>
+                    </div>
+                </dl>
             </div>
         </header>
 
-        <nav class="tabs" role="tablist">
-            <button class="tab-btn is-active" role="tab" aria-selected="true"  data-tab="analyze">Analyze</button>
-            <button class="tab-btn"           role="tab" aria-selected="false" data-tab="gallery">Gallery <span class="tab-count" id="tab-count-gallery">8</span></button>
-            <button class="tab-btn"           role="tab" aria-selected="false" data-tab="docs">Heuristics <span class="tab-count" id="tab-count-docs">13</span></button>
+        <nav class="tabs">
+            <div class="tablist" role="tablist" aria-label="Sections">
+                <button class="tab" type="button" role="tab" id="tab-analyze" data-tab="analyze"
+                        aria-selected="true" aria-controls="panel-analyze">Analyze</button>
+                <button class="tab" type="button" role="tab" id="tab-gallery" data-tab="gallery"
+                        aria-selected="false" aria-controls="panel-gallery" tabindex="-1">Gallery
+                    <span class="tab-count" id="tab-count-gallery">8</span></button>
+                <button class="tab" type="button" role="tab" id="tab-docs" data-tab="docs"
+                        aria-selected="false" aria-controls="panel-docs" tabindex="-1">Heuristics
+                    <span class="tab-count" id="tab-count-docs">13</span></button>
+            </div>
         </nav>
 
-        <section class="tab-panel" data-panel="analyze">
-            <div class="workbench">
-                <div class="panel" id="editor-panel">
-                    <div class="panel-head">
-                        <h2 class="panel-title">Input · paste code</h2>
-                        <div class="panel-actions-inline">
-                            <select id="exampleLoader" class="example-select" aria-label="Try an example"></select>
-                        </div>
-                    </div>
-                    <div class="editor" id="editor">
-                        <div class="editor-gutter" id="editor-gutter" aria-hidden="true">1</div>
-                        <div class="editor-stage">
-                            <div class="editor-overlay" id="editor-overlay" aria-hidden="true"></div>
-                            <textarea id="inputCode" class="editor-input" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="Paste your code here, then press Analyze (or ⌘/Ctrl + Enter)…"></textarea>
-                        </div>
-                    </div>
-                    <div class="editor-toolbar">
-                        <div class="left">
-                            <button id="analyzeBtn" class="btn btn-primary">Analyze</button>
-                            <button id="resetBtn" class="btn btn-danger">Reset</button>
-                            <div class="thresholds" aria-label="Verdict thresholds">
-                                <label>Mixed ≥ <input type="number" id="thresholdMixed" min="0" max="100" step="1" value="25"></label>
-                                <label>AI ≥ <input type="number" id="thresholdAi" min="0" max="100" step="1" value="50"></label>
+        <main>
+            <section class="tab-panel" id="panel-analyze" role="tabpanel" aria-labelledby="tab-analyze" tabindex="0">
+                <div class="workbench">
+                    <div class="workbench-input">
+                        <section class="panel" aria-labelledby="panel-source-title">
+                            <div class="panel-head">
+                                <h2 class="panel-title" id="panel-source-title">Source</h2>
+
+                                <div class="combo" id="exampleCombo">
+                                    <button type="button" class="combo-button" id="exampleComboButton"
+                                            role="combobox" aria-expanded="false" aria-haspopup="listbox"
+                                            aria-controls="exampleComboList" aria-label="Load an example">
+                                        <span class="combo-value">Load an example</span>
+                                        <svg class="combo-caret" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                                            <path d="M2.5 4.5 6 8l3.5-3.5"/>
+                                        </svg>
+                                    </button>
+                                    <ul class="combo-list" id="exampleComboList" role="listbox"
+                                        aria-label="Annotated examples" hidden></ul>
+                                </div>
                             </div>
-                        </div>
-                        <div class="right">
-                            <span class="shortcut-hint"><kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> · analyze</span>
-                        </div>
+
+                            <div class="editor" id="editor">
+                                <div class="editor-gutter" id="editor-gutter" aria-hidden="true">1</div>
+                                <div class="editor-stage">
+                                    <div class="editor-overlay" id="editor-overlay" aria-hidden="true"></div>
+                                    <textarea id="inputCode" class="editor-input" spellcheck="false"
+                                              autocorrect="off" autocapitalize="off" wrap="off"
+                                              aria-label="Code to analyze"
+                                              placeholder="Paste code here, then press Analyze."></textarea>
+                                </div>
+                            </div>
+
+                            <div class="editor-toolbar">
+                                <div class="toolbar-actions">
+                                    <button type="button" id="analyzeBtn" class="btn btn-primary">Analyze</button>
+                                    <button type="button" id="resetBtn" class="btn">Clear</button>
+                                </div>
+                                <p class="toolbar-meta">
+                                    <span id="editor-count">0 lines</span>
+                                    <span class="toolbar-sep" aria-hidden="true">·</span>
+                                    <span class="kbd-hint"><kbd>⌘</kbd><kbd>↵</kbd> to analyze</span>
+                                </p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="workbench-result">
+                        <section class="panel" aria-labelledby="panel-verdict-title">
+                            <div class="panel-head">
+                                <h2 class="panel-title" id="panel-verdict-title">Verdict</h2>
+                                <div class="thresholds">
+                                    <span class="thresholds-label">Thresholds</span>
+                                    <label>Mixed ≥
+                                        <input type="number" id="thresholdMixed" min="0" max="100" step="1" value="25">
+                                    </label>
+                                    <label>AI ≥
+                                        <input type="number" id="thresholdAi" min="0" max="100" step="1" value="50">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="result" class="result-block">
+                                <div class="empty-state" id="results-empty">
+                                    <p class="empty-rule" aria-hidden="true">awaiting input</p>
+                                    <p>Paste code on the left and press <strong>Analyze</strong>. Each matched
+                                        heuristic lists the line numbers and snippets behind it; hover a finding
+                                        to spotlight those lines in the editor.</p>
+                                </div>
+                                <div id="result-summary"></div>
+                                <div id="result-findings" class="findings"></div>
+                            </div>
+                        </section>
                     </div>
                 </div>
+            </section>
 
-                <div class="panel" id="results-panel">
-                    <div class="panel-head">
-                        <h2 class="panel-title">Result · evidence-backed verdict</h2>
-                    </div>
-                    <div id="result" class="result-block">
-                        <div class="results-empty" id="results-empty">
-                            <span class="icon">— awaiting input —</span>
-                            Paste code on the left and press <strong>Analyze</strong>. Every matched heuristic will show its line numbers and snippets here.
-                        </div>
-                        <div id="result-summary"></div>
-                        <div id="result-findings" class="findings"></div>
-                    </div>
+            <section class="tab-panel" id="panel-gallery" role="tabpanel" aria-labelledby="tab-gallery" tabindex="0" hidden>
+                <div class="section-intro">
+                    <h2 class="section-title">Annotated samples</h2>
+                    <p>Most samples are <strong>curated</strong> — distilled from common LLM idioms so each one
+                        cleanly demonstrates one or two signals. A few are <strong>verbatim</strong> transcripts
+                        captured from popular models, to keep a real-world feel. Each card's badge tells you which.
+                        Load any sample into the analyzer to see how it scores.</p>
                 </div>
-            </div>
-        </section>
 
-        <section class="tab-panel hidden" data-panel="gallery">
-            <div class="filters">
-                <span class="filters-label">Language</span>
-                <button class="filter-chip is-active" data-filter="all">All</button>
-                <button class="filter-chip" data-filter="javascript">JavaScript</button>
-                <button class="filter-chip" data-filter="typescript">TypeScript</button>
-                <button class="filter-chip" data-filter="python">Python</button>
-                <button class="filter-chip" data-filter="java">Java</button>
-            </div>
-            <p class="gallery-note">
-                Most samples are <strong>curated</strong> — distilled from common LLM idioms so each one cleanly
-                demonstrates one or two signals. A few are <strong>verbatim</strong> transcripts captured from
-                popular LLMs to keep a real-world feel. Each badge tells you which. Click <em>Load into analyzer</em>
-                on any card to see how the detector scores it.
-            </p>
-            <div id="gallery-grid" class="gallery-grid"></div>
-        </section>
+                <div class="filters" role="group" aria-label="Filter samples by language">
+                    <span class="filters-label" id="filters-label">Language</span>
+                    <button class="chip is-active" type="button" data-filter="all" aria-pressed="true">All</button>
+                    <button class="chip" type="button" data-filter="javascript" aria-pressed="false">JavaScript</button>
+                    <button class="chip" type="button" data-filter="typescript" aria-pressed="false">TypeScript</button>
+                    <button class="chip" type="button" data-filter="python" aria-pressed="false">Python</button>
+                    <button class="chip" type="button" data-filter="java" aria-pressed="false">Java</button>
+                </div>
 
-        <section class="tab-panel hidden" data-panel="docs">
-            <div class="docs-intro">
-                <h2 class="section-h">Heuristics &amp; weights</h2>
-                <p class="muted">Each signal contributes its weight when matched. The verdict score is normalized over the sum of absolute weights and clamped to 0–100. Positive weights are AI tells; the negative-weighted <em>Human-style complexity</em> heuristic acts as a counterweight when a snippet shows real human variety.</p>
-            </div>
-            <div id="docs-list" class="docs-list"></div>
-        </section>
+                <div id="gallery-grid" class="gallery-grid"></div>
+                <p class="gallery-empty hidden" id="gallery-empty">No samples in that language yet.</p>
+            </section>
+
+            <section class="tab-panel" id="panel-docs" role="tabpanel" aria-labelledby="tab-docs" tabindex="0" hidden>
+                <div class="section-intro">
+                    <h2 class="section-title">Heuristics &amp; weights</h2>
+                    <p>Each signal contributes its weight when matched. The score is the sum of matched weights
+                        over the sum of absolute weights, clamped to 0–100. Positive weights are AI tells; the
+                        single negative weight — <em>Human-style complexity</em> — is a counterweight that pulls
+                        the score down when a snippet shows genuine human variety.</p>
+                </div>
+                <div id="docs-list" class="docs-list"></div>
+            </section>
+        </main>
 
         <footer class="page-foot">
-            <span>AI Code Detector · runs entirely in your browser.</span>
-            <span>MIT · <a href="https://github.com/Gabriel-Dalton/AI-Code-Detector">source</a></span>
+            <p>AI Code Detector · runs entirely in your browser, with no network calls and no telemetry.</p>
+            <p>MIT · <a href="https://github.com/Gabriel-Dalton/AI-Code-Detector">source</a></p>
         </footer>
-    </main>
+    </div>
+
+    <p class="sr-only" id="result-status" role="status" aria-live="polite"></p>
 
     <script src="examples.js"></script>
     <script src="script.js"></script>

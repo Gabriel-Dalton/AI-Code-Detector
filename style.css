@@ -1426,6 +1426,21 @@ kbd {
     color: var(--ink-3);
 }
 
+/* Marks an annotation whose tell the detector doesn't score. Sans, not mono:
+   it's a label about the signal, not part of the signal's name. The range
+   number loses its terracotta too, since nothing lit up in the analyzer. */
+.annotation-unscored {
+    margin-left: var(--sp-2);
+    padding: 0 0.3em;
+    border: 1px solid var(--rule-2);
+    font-family: var(--font-sans);
+    font-size: var(--fs-micro);
+    color: var(--ink-3);
+    white-space: nowrap;
+}
+
+.annotation.is-unscored .annotation-range { color: var(--ink-3); }
+
 .annotation-why { grid-column: 2; color: var(--ink-2); }
 
 .card-foot {

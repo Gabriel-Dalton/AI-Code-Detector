@@ -17,14 +17,13 @@
  *   node scripts/contrast-audit.mjs
  *
  * Exits non-zero on any failure, so it can gate a commit or a CI job.
- * Needs playwright and a Chromium build; point CHROMIUM_PATH at one if
- * playwright cannot find its own.
+ * Needs playwright and a Chromium build; see scripts/browser.mjs for how one
+ * is found, and set CHROMIUM_PATH to override.
  */
 
-import { chromium } from 'playwright';
+import { launchChromium } from './browser.mjs';
 
 const BASE = process.env.AUDIT_URL || 'http://127.0.0.1:8899/index.html';
-const EXECUTABLE = process.env.CHROMIUM_PATH || undefined;
 
 /* ---------------------------------------------------------------------------
    Injected into the page. Self-contained because it is serialised across the
@@ -195,7 +194,7 @@ const AUDIT = () => {
 
 /* --------------------------------------------------------------------------- */
 
-const browser = await chromium.launch({ executablePath: EXECUTABLE });
+const browser = await launchChromium();
 let total = 0;
 
 for (const theme of ['light', 'dark']) {

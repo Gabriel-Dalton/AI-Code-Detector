@@ -1,0 +1,64 @@
+name: False positive or false negative
+description: The detector got a verdict wrong on a snippet
+title: 'Verdict: '
+labels: ['calibration']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most useful report the project can get. The heuristics are
+        published in `detector.js`, so a concrete snippet that fools them is
+        directly actionable.
+
+        Before filing: the detector is calibrated for **snippets, not whole
+        files**. Several signals are gated on absolute counts, so pasting a
+        600-line file will light up signals for reasons unrelated to who wrote
+        it. That's a known limitation already recorded in the README — no need
+        to file it again unless you have a fix in mind.
+
+  - type: dropdown
+    id: direction
+    attributes:
+      label: Which way was it wrong?
+      options:
+        - Human-written code was scored as AI
+        - AI-generated code was scored as human
+        - A specific signal fired when it shouldn't
+        - A specific signal didn't fire when it should
+    validations:
+      required: true
+
+  - type: textarea
+    id: snippet
+    attributes:
+      label: The snippet
+      description: The smallest version that still reproduces it.
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: signal
+    attributes:
+      label: Which signal
+      description: The id from the Heuristics tab, e.g. `over_commenting_trivial_ops`. Leave blank if it's about the overall score.
+
+  - type: input
+    id: score
+    attributes:
+      label: Score and verdict shown
+      placeholder: '40.9% — Mixed signals'
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead, and why
+    validations:
+      required: true
+
+  - type: input
+    id: provenance
+    attributes:
+      label: Where the code came from
+      description: Helps a lot for the AI-scored-as-human direction — which model, and was it edited afterwards?
+      placeholder: 'Hand-written in 2019 / GPT-4 output, unedited / Copilot completion I then rewrote'

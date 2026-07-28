@@ -1,0 +1,67 @@
+name: Bug report
+description: Something in the app is broken — the UI, the editor, the gallery, the keyboard handling
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a wrong *verdict*, use the "False positive or false negative"
+        template instead — those are calibration, not breakage.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open index.html
+        2. Pick "Over-commented FizzBuzz" from the example picker
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: 'Firefox 141 / Safari 18.2 / Chrome 139'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: theme
+    attributes:
+      label: Theme
+      options:
+        - Light
+        - Dark
+        - Both
+        - Not relevant
+
+  - type: dropdown
+    id: served
+    attributes:
+      label: How were you running it?
+      options:
+        - Opened index.html from the filesystem
+        - Served over http (npm run serve, or another static server)
+        - A deployed copy
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Anything in the browser console
+      render: text

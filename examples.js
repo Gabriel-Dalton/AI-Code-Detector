@@ -13,10 +13,18 @@
  *   provenance    "verbatim" | "curated"  (tells the user how it was sourced)
  *   title, blurb  display strings
  *   code          the code shown in the gallery and loaded into the analyzer
- *   annotations   [{ lineRange:[start,end], signal, why }] - explains the tells
+ *   annotations   [{ lineRange:[start,end], signal, why, scored? }]
  *   expectedSignals  signal ids the detector should flag (used as a self-test)
+ *
+ * An annotation explains a tell a reader should learn to see, which is a wider
+ * set than the tells this detector scores. Where the two diverge the annotation
+ * carries `scored: false` and says why in its own text -- usually because the
+ * signal is gated on a snippet length this sample doesn't reach, or because it
+ * matches literal text where the sample only repeats a shape. Every annotation
+ * without that flag is checked against the live detector by test/, so the
+ * teaching material cannot quietly drift away from the code.
  */
-window.AI_CODE_EXAMPLES = [
+const AI_CODE_EXAMPLES = [
   {
     id: "py-overcommented-fizzbuzz",
     language: "python",
@@ -52,7 +60,7 @@ fizzbuzz(100)`,
     annotations: [
       { lineRange: [1, 2], signal: "preamble_strings",            why: "Conversational lead-in (\"Here's a simple ...\") that LLMs prepend when asked for code." },
       { lineRange: [5, 21], signal: "over_commenting_trivial_ops", why: "Every line is preceded by a comment that restates exactly what the next line does." },
-      { lineRange: [3, 3], signal: "generic_names",                why: "Function takes a single parameter named n with no domain meaning." }
+      { lineRange: [3, 3], signal: "generic_names", scored: false, why: "Function takes a single parameter named n with no domain meaning. Not scored: the signal matches a fixed list of placeholder words, and bare single letters are not on it." }
     ],
     expectedSignals: ["preamble_strings", "over_commenting_trivial_ops"]
   },
@@ -146,7 +154,7 @@ def sum_list(values: List[int]) -> int:
     annotations: [
       { lineRange: [4, 31], signal: "formatting_too_clean",  why: "Indentation is identical on every line, two blank lines between every top-level def, no trailing whitespace anywhere." },
       { lineRange: [4, 22], signal: "symmetric_helper_names", why: "Symmetric one-liner helpers (add/subtract/multiply/divide) - a textbook signature pattern, rare in real codebases." },
-      { lineRange: [1, 31], signal: "no_todo_fixme",         why: "30+ lines of code without a single TODO/FIXME/XXX. Production code almost always has at least one." }
+      { lineRange: [1, 31], signal: "no_todo_fixme", scored: false, why: "Not a single TODO/FIXME/XXX anywhere, where production code almost always carries one. Not scored: the signal needs 25 non-empty lines before it will fire and this sample has 21, so the tell is visible to a reader but below the gate." }
     ],
     expectedSignals: ["formatting_too_clean", "symmetric_helper_names", "generic_names"]
   },
@@ -408,8 +416,15 @@ function validateEvent(event: Event): boolean {
     annotations: [
       { lineRange: [3, 5],   signal: "generic_names",                 why: "Renames the parameters to local variables of the same meaning (`itemsList`, `rate`) for no reason." },
       { lineRange: [2, 22],  signal: "over_commenting_trivial_ops",   why: "Eleven comments in 22 lines, every one restating the very next statement." },
-      { lineRange: [11, 15], signal: "repetitive_lines",              why: "Multiple intermediate variables (`currentItem`, `price`, `subtotal = subtotal + price`) where one expression would do." }
+      { lineRange: [11, 15], signal: "repetitive_lines", scored: false, why: "Multiple intermediate variables (`currentItem`, `price`, `subtotal = subtotal + price`) where one expression would do. Not scored: the signal counts lines duplicated verbatim, and these repeat a shape rather than exact text." }
     ],
     expectedSignals: ["over_commenting_trivial_ops", "generic_names"]
   }
 ];
+
+/* Published on `window` for the browser and on `module.exports` for Node, so
+   the gallery data has exactly one definition and the test suite can check it
+   (ids unique, annotation line ranges in bounds, expectedSignals actually
+   firing) without a headless browser. */
+if (typeof window !== 'undefined') window.AI_CODE_EXAMPLES = AI_CODE_EXAMPLES;
+if (typeof module !== 'undefined' && module.exports) module.exports = AI_CODE_EXAMPLES;

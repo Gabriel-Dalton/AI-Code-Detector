@@ -1,0 +1,69 @@
+name: Propose a heuristic
+description: A tell the detector doesn't look for yet
+title: 'Heuristic: '
+labels: ['heuristic']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A good heuristic is one that fires on generated code and *stays quiet*
+        on the human equivalent. The second half is the hard part and the part
+        worth thinking about before filing — a signal that fires on everything
+        adds noise to every verdict, since the score is normalised over the sum
+        of all weights.
+
+  - type: input
+    id: name
+    attributes:
+      label: What would you call it
+      placeholder: 'Exhaustive enum switch with an unreachable default'
+    validations:
+      required: true
+
+  - type: textarea
+    id: fires
+    attributes:
+      label: Code it should fire on
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: quiet
+    attributes:
+      label: Similar code it should NOT fire on
+      description: The same shape, written by a human, without the tell.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this is a tell
+      description: What is it about how models generate code that produces this?
+    validations:
+      required: true
+
+  - type: input
+    id: weight
+    attributes:
+      label: Suggested weight
+      description: Existing weights run 0.4 to 2.0 for AI tells; negative means it's a human signal. Roughly, how strongly does it point?
+      placeholder: '1.2'
+
+  - type: input
+    id: languages
+    attributes:
+      label: Which languages does it apply to
+      placeholder: 'JS/TS only / any C-family / Python'
+
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Before filing
+      options:
+        - label: I checked the Heuristics tab and this isn't already covered
+          required: true
+        - label: My "should not fire" example is genuinely code a person would write, not a strawman
+          required: true

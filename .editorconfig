@@ -1,0 +1,27 @@
+# Indentation is a signal this project literally scores, so keeping it
+# consistent is not just tidiness — a stray tab changes what the detector says
+# about its own source.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# The gallery data is dense and deeply nested; 2 keeps entries readable.
+[examples.js]
+indent_size = 2
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[LICENSE]
+indent_style = unset
+indent_size = unset

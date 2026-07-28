@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="AI Code Detector">
+  <rect width="32" height="32" rx="6" fill="#15110b"/>
+  <path d="M7.5 11h17M7.5 16h11.5M7.5 21h7" stroke="#f0e9da" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="23" cy="21" r="3.25" fill="#c45a35"/>
+</svg>

@@ -20,8 +20,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
----
-
-The webfonts bundled under assets/fonts/ are third-party and are not covered by
-the licence above. Source Serif 4, Inter and JetBrains Mono are each licensed
-under the SIL Open Font License 1.1, reproduced in assets/fonts/LICENSE-OFL.txt.

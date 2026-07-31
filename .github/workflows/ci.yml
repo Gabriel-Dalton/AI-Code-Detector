@@ -1,8 +1,13 @@
 name: CI
 
+# push is limited to the default branch on purpose. Triggering on every branch
+# and on pull_request means a branch with an open PR runs the whole matrix
+# twice for one commit. Branches get their coverage from their PR, where the run
+# is against the merge result rather than the branch tip, and main gets it on
+# push.
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
   workflow_dispatch:
 

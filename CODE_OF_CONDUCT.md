@@ -59,8 +59,11 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-**gabriel@accessibilitychecker.org**.
+reported to the maintainer privately through GitHub — either by opening a
+[private security advisory][report] or by contacting
+[@Gabriel-Dalton](https://github.com/Gabriel-Dalton) directly.
+
+[report]: https://github.com/Gabriel-Dalton/AI-Code-Detector/security/advisories/new
 
 All complaints will be reviewed and investigated promptly and fairly.
 

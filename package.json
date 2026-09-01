@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "http-server": "^14.1.1",
-    "playwright": "^1.56.1"
+    "playwright": "^1.62.1"
   },
   "engines": {
     "node": ">=20"
